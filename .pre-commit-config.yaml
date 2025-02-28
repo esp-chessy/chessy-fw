@@ -1,3 +1,4 @@
+default_stages: [pre-commit, commit-msg]
 repos:
   - repo: https://github.com/pre-commit/pre-commit-hooks
     rev: v5.0.0
@@ -10,7 +11,7 @@ repos:
     rev: v1.0.5
     hooks:
       - id: astyle_py
-        args: [--options=astyle_config]
+        args: ['--style=otbs', '--attach-namespaces', '--attach-classes', '--indent=spaces=4', '--convert-tabs', '--align-pointer=name', '--align-reference=name', '--keep-one-line-statements', '--pad-header', '--pad-oper', '--unpad-paren', '--pad-comma']
   - repo: https://github.com/espressif/conventional-precommit-linter
     rev: v1.9.0
     hooks:
