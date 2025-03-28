@@ -16,7 +16,7 @@ static bool is_valid_position(int x, int y)
     return x >= 0 && x < 8 && y >= 0 && y < 8;
 }
 
-int pawn_moves(int x, int y, Position_t *moves)
+static int pawn_moves(const char board[8][8], int x, int y, Position_t *moves)
 {
     printf("pawn_moves\n");
     int move_count = 0;
@@ -55,7 +55,7 @@ int pawn_moves(int x, int y, Position_t *moves)
     return move_count;
 }
 
-int rook_moves(int x, int y, Position_t *moves)
+static int rook_moves(const char board[8][8], int x, int y, Position_t *moves)
 {
     // TODO: add a check for castling
     printf("rook_moves\n");
@@ -92,7 +92,7 @@ int rook_moves(int x, int y, Position_t *moves)
     return move_count;
 }
 
-int knight_moves(int x, int y, Position_t *moves)
+static int knight_moves(const char board[8][8], int x, int y, Position_t *moves)
 {
     printf("knight_moves\n");
     int move_count = 0;
@@ -115,7 +115,7 @@ int knight_moves(int x, int y, Position_t *moves)
     return move_count;
 }
 
-int bishop_moves(int x, int y, Position_t *moves)
+static int bishop_moves(const char board[8][8], int x, int y, Position_t *moves)
 {
     printf("bishop_moves\n");
     int move_count = 0;
@@ -145,7 +145,7 @@ int bishop_moves(int x, int y, Position_t *moves)
     return move_count;
 }
 
-int king_moves(int x, int y, Position_t *moves)
+static int king_moves(const char board[8][8], int x, int y, Position_t *moves)
 {
     printf("king_moves\n");
     int move_count = 0;
@@ -169,7 +169,7 @@ int king_moves(int x, int y, Position_t *moves)
     return move_count;
 }
 
-int queen_moves(int x, int y, Position_t *moves)
+static int queen_moves(const char board[8][8], int x, int y, Position_t *moves)
 {
     printf("queen_moves\n");
     int move_count = 0;
@@ -206,27 +206,27 @@ int queen_moves(int x, int y, Position_t *moves)
     return move_count;
 }
 
-int get_available_moves(int x, int y, Position_t *moves)
+int get_available_moves(const char board[8][8], int x, int y, Position_t *moves)
 {
     switch (board[x][y]) {
     case 'P':
     case 'p':
-        return pawn_moves(x, y, moves);
+        return pawn_moves(board, x, y, moves);
     case 'R':
     case 'r':
-        return rook_moves(x, y, moves);
+        return rook_moves(board, x, y, moves);
     case 'N':
     case 'n':
-        return knight_moves(x, y, moves);
+        return knight_moves(board, x, y, moves);
     case 'B':
     case 'b':
-        return bishop_moves(x, y, moves);
+        return bishop_moves(board, x, y, moves);
     case 'Q':
     case 'q':
-        return queen_moves(x, y, moves);
+        return queen_moves(board, x, y, moves);
     case 'K':
     case 'k':
-        return king_moves(x, y, moves);
+        return king_moves(board, x, y, moves);
     default:
         return 0;
     }
