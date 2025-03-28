@@ -232,10 +232,10 @@ int get_available_moves(int x, int y, Position_t *moves)
     }
 }
 
-bool is_valid_move(Position_t end, Position_t *moves)
+bool is_valid_move(Position_t end, Position_t *moves, int move_count)
 {
-    // Iterate through moves until we hit the sentinel value (-1, -1)
-    for (int i = 0; moves[i].x != -1 || moves[i].y != -1; i++) {
+    // Check if the end position matches any of the valid moves
+    for (int i = 0; i < move_count; i++) {
         if (moves[i].x == end.x && moves[i].y == end.y) {
             return true;
         }
