@@ -2,10 +2,7 @@
 #include <string.h>
 #include "board.h"
 
-char board[8][8];
-
-
-void init_board()
+void init_board(char board[8][8])
 {
     char temp[8][8] = {
         {'R', 'N', 'B', 'Q', 'K', 'B', 'N', 'R'},
@@ -20,7 +17,7 @@ void init_board()
     memcpy(board, temp, sizeof(temp));
 }
 
-void print_board()
+void print_board(const char board[8][8])
 {
     printf("  a b c d e f g h\n");
     printf(" ┌────────────────┐\n");

@@ -25,11 +25,13 @@ typedef struct {
 /**
  * @brief Get the available moves for a piece based on the piece's position
  *
- * @param x
- * @param y
- * @return Position_t*
+ * @param board The current board state
+ * @param x The x coordinate of the piece
+ * @param y The y coordinate of the piece
+ * @param moves Array to store valid moves
+ * @return int Number of valid moves found
  */
-Position_t *get_available_moves(int x, int y);
+int get_available_moves(const char board[8][8], int x, int y, Position_t *moves);
 
 /**
  * @brief Check if a move is valid
