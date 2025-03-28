@@ -118,7 +118,7 @@ Move_t get_user_move()
         break;
     } while (1);
     printf("end: %c%d idx: %d, %d piece: %c\n", 'a' + end.y, 8 - end.x, end.x, end.y, board[end.x][end.y]);
-    if (!is_valid_move(end, moves)) {
+    if (!is_valid_move(end, moves, move_count)) {
         printf("Invalid move\n");
         return get_user_move();
     }

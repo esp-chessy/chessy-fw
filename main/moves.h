@@ -31,6 +31,15 @@ typedef struct {
  */
 Position_t *get_available_moves(int x, int y);
 
-bool is_valid_move(Position_t end, Position_t *moves);
+/**
+ * @brief Check if a move is valid
+ *
+ * @param end The end position of the move
+ * @param moves Array of valid moves
+ * @param move_count Number of valid moves
+ * @return true if the move is valid
+ * @return false if the move is invalid
+ */
+bool is_valid_move(Position_t end, Position_t *moves, int move_count);
 
 #endif
