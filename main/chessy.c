@@ -93,18 +93,18 @@ void hall_init(void)
     gpio_config_t io_conf = {
         .intr_type = GPIO_INTR_DISABLE,
         .mode = GPIO_MODE_OUTPUT,
-        .pin_bit_mask = (1ULL << HALL_COL_SW1) | (1ULL << HALL_COL_SW2) | 
-                       (1ULL << HALL_COL_SW3) | (1ULL << HALL_COL_SW4) |
-                       (1ULL << HALL_COL_SW5) | (1ULL << HALL_COL_SW6) |
-                       (1ULL << HALL_COL_SW7) | (1ULL << HALL_COL_SW8),
+        .pin_bit_mask = (1ULL << HALL_COL_SW1) | (1ULL << HALL_COL_SW2) |
+        (1ULL << HALL_COL_SW3) | (1ULL << HALL_COL_SW4) |
+        (1ULL << HALL_COL_SW5) | (1ULL << HALL_COL_SW6) |
+        (1ULL << HALL_COL_SW7) | (1ULL << HALL_COL_SW8),
     };
     ESP_ERROR_CHECK(gpio_config(&io_conf));
 
     io_conf.mode = GPIO_MODE_INPUT;
     io_conf.pin_bit_mask = (1ULL << HALL_ROW1) | (1ULL << HALL_ROW2) |
-                          (1ULL << HALL_ROW3) | (1ULL << HALL_ROW4) |
-                          (1ULL << HALL_ROW5) | (1ULL << HALL_ROW6) |
-                          (1ULL << HALL_ROW7) | (1ULL << HALL_ROW8);
+                           (1ULL << HALL_ROW3) | (1ULL << HALL_ROW4) |
+                           (1ULL << HALL_ROW5) | (1ULL << HALL_ROW6) |
+                           (1ULL << HALL_ROW7) | (1ULL << HALL_ROW8);
     ESP_ERROR_CHECK(gpio_config(&io_conf));
 }
 
@@ -115,7 +115,7 @@ void hall_read(uint8_t matrix[ROW_NUM][COL_NUM])
         HALL_COL_SW1, HALL_COL_SW2, HALL_COL_SW3, HALL_COL_SW4,
         HALL_COL_SW5, HALL_COL_SW6, HALL_COL_SW7, HALL_COL_SW8
     };
-    
+
     static uint8_t row_pins[] = {
         HALL_ROW1, HALL_ROW2, HALL_ROW3, HALL_ROW4,
         HALL_ROW5, HALL_ROW6, HALL_ROW7, HALL_ROW8
@@ -128,12 +128,12 @@ void hall_read(uint8_t matrix[ROW_NUM][COL_NUM])
     for (int col = 0; col < COL_NUM; col++) {
         gpio_set_level(col_pins[col], 1);
         vTaskDelay(pdMS_TO_TICKS(10));
-        
+
         // Read each row
         for (int row = 0; row < ROW_NUM; row++) {
             matrix[row][col] = gpio_get_level(row_pins[row]);
         }
-        
+
         gpio_set_level(col_pins[col], 0);
     }
 }
@@ -143,15 +143,16 @@ static bool verify_board_state(const char board[8][8], const uint8_t matrix[ROW_
 {
     for (int row = 0; row < ROW_NUM; row++) {
         for (int col = 0; col < COL_NUM; col++) {
+            printf("Debug: Checking square at %c%d hall_sensor: %d matrix: %c\n", 'a' + col, 8 - row, matrix[row][col], board[row][col]);
             // If there's a piece in the board array, there should be a magnet detected
-            if (board[row][col] != ' ' && !matrix[row][col]) {
+            if (board[row][col] != ' ' && matrix[row][col]) {
                 printf("Error: Missing piece at %c%d\n", 'a' + col, 8 - row);
                 led_set(col, row, COLOR_ERROR);
                 led_refresh();
                 return false;
             }
             // If there's no piece in the board array, there should be no magnet detected
-            if (board[row][col] == ' ' && matrix[row][col]) {
+            if (board[row][col] == ' ' && !matrix[row][col]) {
                 printf("Error: Extra piece at %c%d\n", 'a' + col, 8 - row);
                 led_set(col, row, COLOR_ERROR);
                 led_refresh();
@@ -163,20 +164,23 @@ static bool verify_board_state(const char board[8][8], const uint8_t matrix[ROW_
 }
 
 // Update LED display based on current board state and selected piece
-static void update_led_display(const char board[8][8], const uint8_t matrix[ROW_NUM][COL_NUM], 
-                             const Position_t *selected_pos,
-                             const Position_t *valid_moves,
-                             int valid_move_count)
+static void update_led_display(
+    const char board[8][8],
+    const uint8_t hall_matrix[ROW_NUM][COL_NUM],
+    const Position_t *selected_pos,
+    const Position_t *valid_moves,
+    int valid_move_count
+)
 {
     led_clear();
 
     // First, show all pieces on the board
     for (int row = 0; row < ROW_NUM; row++) {
         for (int col = 0; col < COL_NUM; col++) {
-            if (matrix[row][col]) {
+            if (hall_matrix[row][col]) {
                 char piece = board[row][col];
-                uint32_t color = (piece >= 'a' && piece <= 'z') ? 
-                               COLOR_BLACK_PIECE : COLOR_WHITE_PIECE;
+                uint32_t color = (piece >= 'a' && piece <= 'z') ?
+                                 COLOR_BLACK_PIECE : COLOR_WHITE_PIECE;
                 led_set(col, row, color);
             }
         }
@@ -215,7 +219,9 @@ bool detect_piece_movement(Position_t *pos)
                 break;
             }
         }
-        if (movement_detected) break;
+        if (movement_detected) {
+            break;
+        }
     }
 
     // Update previous state
@@ -230,27 +236,32 @@ Move_t get_user_move(const char board[8][8])
     Position_t valid_moves[32];
     int valid_move_count = 0;
     bool move_completed = false;
+    bool invalid_move = false;
     Position_t current_pos;
 
     while (!move_completed) {
         // Wait for piece selection
-        while (!detect_piece_movement(&current_pos)) {
-            vTaskDelay(pdMS_TO_TICKS(100));
-        }
-        start = current_pos;
+        if (!invalid_move) {
+            while (!detect_piece_movement(&current_pos)) {
+                vTaskDelay(pdMS_TO_TICKS(100));
+            }
+            start = current_pos;
 
-        // Check if the move is valid
-        if (board[start.x][start.y] == ' ') {
-            printf("Error: No piece at that position\n");
-            start.x = start.y = -1;
-            continue;
-        }
+            // Check if the move is valid
+            if (board[start.x][start.y] == ' ') {
+                printf("Error: No piece at that position\n");
+                start.x = start.y = -1;
+                continue;
+            }
 
-        // Get and display valid moves
-        valid_move_count = get_available_moves(board, start.x, start.y, valid_moves);
-        uint8_t curr_matrix[ROW_NUM][COL_NUM];
-        hall_read(curr_matrix);
-        update_led_display(board, curr_matrix, &start, valid_moves, valid_move_count);
+            // Get and display valid moves
+            valid_move_count = get_available_moves(board, start.x, start.y, valid_moves);
+            uint8_t curr_matrix[ROW_NUM][COL_NUM];
+            hall_read(curr_matrix);
+            update_led_display(board, curr_matrix, &start, valid_moves, valid_move_count);
+        } else {
+            printf("Please pick a valid move or return piece to the original position\n");
+        }
 
         // Wait for move completion
         while (!detect_piece_movement(&current_pos)) {
@@ -265,8 +276,17 @@ Move_t get_user_move(const char board[8][8])
             led_set(end.y, end.x, COLOR_VALID_MOVE);
             led_refresh();
             vTaskDelay(pdMS_TO_TICKS(LED_DELAY_MS));
+        } else if (end.x == start.x && end.y == start.y) {
+            move_completed = true;
+            invalid_move = false;
+            // Show cancel feedback
+            // TODO: return piece to original position
+            led_set(end.y, end.x, COLOR_EMPTY);
+            led_refresh();
+            vTaskDelay(pdMS_TO_TICKS(LED_DELAY_MS));
         } else {
             printf("Invalid move\n");
+            invalid_move = true;
             // Show error feedback
             led_set(end.y, end.x, COLOR_INVALID_MOVE);
             led_refresh();
@@ -275,8 +295,11 @@ Move_t get_user_move(const char board[8][8])
         }
     }
 
-    return (Move_t) { start, end };
+    return (Move_t) {
+        start, end
+    };
 }
+
 
 Move_t move_list[100];  // TODO: make this dynamic
 unsigned int move_count = 0;
@@ -284,16 +307,36 @@ unsigned int move_count = 0;
 void print_move_list()
 {
     for (int i = 0; i < move_count; i++) {
-        printf("%d. %c%d->%c%d\n", i + 1, 'a' + move_list[i].start.y, 8 - move_list[i].start.x, 'a' + move_list[i].end.y, 8 - move_list[i].end.x);
+        printf("%d. %c%d->%c%d\n",
+               i + 1,
+               'a' + move_list[i].start.y,
+               8 - move_list[i].start.x,
+               'a' + move_list[i].end.y,
+               8 - move_list[i].end.x
+              );
     }
+}
+
+bool start_is_end(Move_t move)
+{
+    // Check if the start and end positions are the same
+    if (move.start.x == move.end.x && move.start.y == move.end.y) {
+        printf("Returning piece to original location, no move added to list.\n");
+        return true;
+    }
+    return false;
 }
 
 void add_move(char board[8][8], Move_t move)
 {
     // Add the move to the move list and update the board
+    if (start_is_end(move)) {
+        return;
+    }
     move_list[move_count] = move;
     move_count++;
-    printf("moving %c from %d%d to %d%d\n", board[move.start.x][move.start.y], move.start.y, move.start.x, move.end.y, move.end.x);
+    printf("moving %c from %c%d to %c%d\n", board[move.start.x][move.start.y], 'a' + move.start.y, 8 - move.start.x, 'a' + move.end.y, 8 - move.end.x);
+    // Update the board
     board[move.end.x][move.end.y] = board[move.start.x][move.start.y];
     board[move.start.x][move.start.y] = ' ';
 }
@@ -303,21 +346,34 @@ int app_main(int argc, char *argv[])
     // Initialize hardware
     hall_init();
     configure_led();
-    
+
     // Initialize game
     char board[8][8];
     init_board(board);
     print_board(board);
 
     // Wait for initial board setup
-    uint8_t matrix[ROW_NUM][COL_NUM];
+    uint8_t hall_matrix[ROW_NUM][COL_NUM];
     bool board_ready = false;
 
     while (!board_ready) {
-        printf("Please set up the board according to the displayed state...\n");
-        hall_read(matrix);
-        
-        if (verify_board_state(board, matrix)) {
+        // printf("Please set up the board according to the displayed state...\n");
+        hall_read(hall_matrix);
+        // print matrix
+        printf("Current matrix state:\n");
+        printf("  a b c d e f g h\n");
+        printf(" ┌────────────────┐\n");
+        for (int row = 0; row < ROW_NUM; row++) {
+            printf("%d│", 8 - row);
+            for (int col = 0; col < COL_NUM; col++) {
+                printf("%d ", hall_matrix[row][col]);
+            }
+            printf("│%d\n", 8 - row);
+        }
+        printf(" └────────────────┘\n");
+        printf("  a b c d e f g h\n");
+
+        if (verify_board_state(board, hall_matrix)) {
             board_ready = true;
             printf("Board setup verified!\n");
             led_clear();
@@ -325,6 +381,10 @@ int app_main(int argc, char *argv[])
             printf("Board setup incorrect. Please fix the highlighted positions.\n");
             vTaskDelay(pdMS_TO_TICKS(LED_DELAY_MS));
         }
+
+        // debug mode, skip verification
+        led_clear();
+        board_ready = true;
     }
 
     while (1) {
