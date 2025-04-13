@@ -19,11 +19,13 @@ void init_board(char board[8][8])
 
 void print_board(const char board[8][8])
 {
+
     printf("  a b c d e f g h\n");
     printf(" ┌────────────────┐\n");
     for (int i = 0; i < 8; i++) {
         printf("%d│", 8 - i);
-        for (int j = 0; j < 8; j++) {
+        // hall matrix and leds has reversed y axis compared to board
+        for (int j = 7; j >= 0; j--) {
             printf("%c ", board[i][j]);
         }
         printf("│%d\n", 8 - i);
